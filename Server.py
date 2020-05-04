@@ -3,6 +3,7 @@ from typing import Tuple
 from Chat           import Chat
 from AppSettings    import AppSettings
 from Database       import Database
+from User           import User
 
 class Server:
     def __init__(self, appSettings: AppSettings):
@@ -15,14 +16,22 @@ class Server:
         slackId = payload["user"    ]
         text    = payload["text"    ]
 
-        #displayName = self.chat.getDisplayName(userId)
-        
-        self.parseAppMention(text, slackId)
+        displayName = self.chat.getDisplayName(slackId)
+
+        user = self.database.findUser(slackId)
+
+        if not user:
+            user = self.database.addUser(slackId, displayName)
+
+        if not user:
+            return
+
+        self.parseAppMention(text, user)
         
         #message     = "Hello " + displayName + ", nice to meet you! Use /musicbotinfo to learn more about me!"
         #status      = self.chat.sendMessage     (channel, message)
 
-    def parseAppMention(self, text: str, slackId: str) -> None:
+    def parseAppMention(self, text: str, user: User) -> None:
         tokenCreate   = "create list"
         tokenAdd      = "add "
         tokenRemove   = "remove "
@@ -36,13 +45,18 @@ class Server:
             listName        = text[listNameIndex:]
 
             listName = listName.rstrip()
+            listName = listName.lstrip()
+
+            listName = listName.lower()
+
+            self.database.addList(user.id, listName)
 
             return
 
         list, item = self.getListAndItem(text, tokenAdd, tokenToList)
 
         if list is not None and item is not None:
-            return
+            self.database.addItemToList(item, list)
 
         list, item = self.getListAndItem(text, tokenRemove, tokenFromList)
 
