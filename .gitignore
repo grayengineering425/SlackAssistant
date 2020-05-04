@@ -30,3 +30,8 @@
 *.exe
 *.out
 *.app
+
+\assistant_env
+\.idea
+\__pycache__
+Settings/BotSettings.ini
